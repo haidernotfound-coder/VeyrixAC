@@ -61,7 +61,7 @@ export async function ensureSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       expires_at TIMESTAMPTZ NOT NULL,
       used_at TIMESTAMPTZ,
-      used_version_id BIGINT REFERENCES plugin_versions(id),
+      used_version_id BIGINT REFERENCES plugin_versions(id) ON DELETE SET NULL,
       revoked BOOLEAN NOT NULL DEFAULT false
     )
   `;
@@ -69,5 +69,29 @@ export async function ensureSchema() {
     CREATE INDEX IF NOT EXISTS idx_download_pins_pin_active
     ON download_pins (pin)
     WHERE used_at IS NULL AND revoked = false
+  `;
+
+  // Migration: download_pins.used_version_id was originally created with
+  // no ON DELETE clause (defaults to NO ACTION in Postgres), which made
+  // deleting a plugin_versions row fail with a foreign key violation the
+  // instant any PIN had ever been redeemed against it. CREATE TABLE IF
+  // NOT EXISTS above doesn't retroactively fix that on a database that
+  // already has the table, so patch it here on every call - cheap no-op
+  // once the constraint is already correct.
+  await db`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'download_pins_used_version_id_fkey'
+          AND confdeltype != 'n' -- 'n' = SET NULL; anything else needs fixing
+      ) THEN
+        ALTER TABLE download_pins DROP CONSTRAINT download_pins_used_version_id_fkey;
+        ALTER TABLE download_pins
+          ADD CONSTRAINT download_pins_used_version_id_fkey
+          FOREIGN KEY (used_version_id) REFERENCES plugin_versions(id) ON DELETE SET NULL;
+      END IF;
+    END $$;
   `;
 }

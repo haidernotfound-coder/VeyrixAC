@@ -12,20 +12,26 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { versionId } = await params;
-  const { setLatest, notes } = await req.json();
+  try {
+    const { setLatest, notes } = await req.json();
 
-  await ensureSchema();
-  const db = sql();
+    await ensureSchema();
+    const db = sql();
 
-  if (setLatest) {
-    await db`UPDATE plugin_versions SET is_latest = false`;
-    await db`UPDATE plugin_versions SET is_latest = true WHERE id = ${versionId}`;
+    if (setLatest) {
+      await db`UPDATE plugin_versions SET is_latest = false`;
+      await db`UPDATE plugin_versions SET is_latest = true WHERE id = ${versionId}`;
+    }
+    if (typeof notes === "string") {
+      await db`UPDATE plugin_versions SET notes = ${notes} WHERE id = ${versionId}`;
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err: unknown) {
+    console.error("patch version error", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-  if (typeof notes === "string") {
-    await db`UPDATE plugin_versions SET notes = ${notes} WHERE id = ${versionId}`;
-  }
-
-  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
@@ -36,8 +42,19 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { versionId } = await params;
-  await ensureSchema();
-  const db = sql();
-  await db`DELETE FROM plugin_versions WHERE id = ${versionId}`;
-  return NextResponse.json({ ok: true });
+  try {
+    await ensureSchema();
+    const db = sql();
+    const [deleted] = await db`
+      DELETE FROM plugin_versions WHERE id = ${versionId} RETURNING id
+    `;
+    if (!deleted) {
+      return NextResponse.json({ error: "Build not found (already deleted?)" }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (err: unknown) {
+    console.error("delete version error", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

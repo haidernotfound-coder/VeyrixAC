@@ -222,17 +222,29 @@ export default function Dashboard() {
   }
 
   async function handleSetLatest(versionId: string) {
-    await fetch(`/api/admin/versions/${versionId}`, {
+    setVersionError(null);
+    const res = await fetch(`/api/admin/versions/${versionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ setLatest: true }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setVersionError(data.error ?? "Failed to update build");
+      return;
+    }
     load();
   }
 
   async function handleDeleteVersion(versionId: string) {
     if (!confirm("Permanently delete this build? Existing keys pointed at it by ID will stop working.")) return;
-    await fetch(`/api/admin/versions/${versionId}`, { method: "DELETE" });
+    setVersionError(null);
+    const res = await fetch(`/api/admin/versions/${versionId}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setVersionError(data.error ?? "Failed to delete build");
+      return;
+    }
     load();
   }
 
