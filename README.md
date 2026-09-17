@@ -93,9 +93,12 @@ endpoints and the admin panel both need Postgres.
   `LicenseKey.java` and `KeygenTool.java` byte-for-byte (see
   `lib/license.ts`). A key made by the CLI `KeygenTool` still works and
   will "self-register" here on first activation.
-- Revoking a key in the admin panel takes effect the next time that
-  server's plugin calls `/api/heartbeat` (every 15 minutes by default) or
-  on its next restart — not instantly, since the plugin can't be pushed
-  to.
+- Revoking (or deleting) a key takes effect within about a minute: the
+  plugin heartbeats every 60 seconds (see `LicenseManager.java`), and the
+  moment a heartbeat comes back invalid it disables itself live via
+  Bukkit's `disablePlugin()` — no restart needed. This works even across
+  a plugin restart, since the plugin falls back to heartbeating by the
+  key's numeric ID (not the full signed string) when `license.dat` alone
+  is all it has to go on.
 - Deleting a key removes it and its install history permanently; revoking
   is usually what you want instead, since it keeps the history.
