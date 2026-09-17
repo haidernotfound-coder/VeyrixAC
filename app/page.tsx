@@ -29,6 +29,14 @@ export default function Home() {
             <Link href="#checks" className="hover:text-paper transition-colors">Checks</Link>
             <Link href="#licensing" className="hover:text-paper transition-colors">Licensing</Link>
             <Link href="#roadmap" className="hover:text-paper transition-colors">Roadmap</Link>
+            <a
+              href="https://discord.gg/xJ2nFUEs7u"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-signal transition-colors"
+            >
+              Discord
+            </a>
             <Link
               href="/admin"
               className="rounded-sm border border-panel-line px-3 py-1.5 text-paper hover:border-signal hover:text-signal transition-colors"
@@ -41,11 +49,11 @@ export default function Home() {
 
       {/* Hero */}
       <section className="grain border-b border-panel-line">
-        <div className="mx-auto max-w-6xl px-6 py-24">
-          <div className="font-mono-data mb-6 inline-block rounded-sm border border-signal-dim px-3 py-1 text-xs text-signal">
+        <div className="mx-auto max-w-6xl px-6 py-28">
+          <div className="glow-border font-mono-data mb-6 inline-block rounded-sm border border-signal-dim px-3 py-1 text-xs text-signal">
             Built for Mounts of Mayhem — Minecraft 1.21.11
           </div>
-          <h1 className="max-w-3xl text-5xl font-medium leading-[1.05] tracking-tight text-paper sm:text-6xl">
+          <h1 className="glow-text max-w-3xl text-5xl font-medium leading-[1.05] tracking-tight text-paper sm:text-6xl">
             An anticheat that tells you what a player did, not just that it flagged.
           </h1>
           <p className="mt-6 max-w-xl text-lg text-paper-dim">
@@ -57,7 +65,7 @@ export default function Home() {
           <div className="mt-10 flex items-center gap-4">
             <a
               href="#licensing"
-              className="rounded-sm bg-signal px-5 py-3 font-medium text-ink transition-transform hover:scale-[1.02]"
+              className="glow-btn rounded-sm bg-signal px-5 py-3 font-medium text-ink transition-transform hover:scale-[1.02]"
             >
               Get a license
             </a>
@@ -101,9 +109,14 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 gap-px overflow-hidden rounded-sm border border-panel-line bg-panel-line sm:grid-cols-2 lg:grid-cols-3">
             {checks.map((c) => (
-              <div key={c.name} className="bg-panel p-6">
+              <div
+                key={c.name}
+                className="group relative bg-panel p-6 transition-colors hover:bg-[#0d1830]"
+              >
                 <div className="font-mono-data text-xs uppercase text-signal-dim">{c.cat}</div>
-                <div className="mt-2 font-medium text-paper">{c.name}</div>
+                <div className="mt-2 font-medium text-paper transition-colors group-hover:text-signal">
+                  {c.name}
+                </div>
                 <p className="mt-2 text-sm text-paper-dim">{c.desc}</p>
               </div>
             ))}
@@ -139,7 +152,7 @@ export default function Home() {
                 </li>
               </ul>
             </div>
-            <div className="rounded-sm border border-panel-line bg-panel p-6">
+            <div className="glow-border rounded-sm border border-panel-line bg-panel p-6">
               <div className="font-mono-data text-xs text-paper-dim">/veyrix license &lt;key&gt;</div>
               <div className="mt-4 space-y-2 font-mono-data text-sm">
                 <div className="text-paper-dim">&gt; Verifying signature...</div>
@@ -147,9 +160,31 @@ export default function Home() {
                 <div className="text-signal">&gt; License activated successfully.</div>
                 <div className="text-paper-dim">&gt; Licensed until 2027-03-01T00:00:00Z.</div>
               </div>
+
+              <div className="mt-6 border-t border-panel-line pt-6">
+                <div className="text-sm text-paper">Don&apos;t have a key yet?</div>
+                <p className="mt-2 text-xs text-paper-dim">
+                  Keys are issued by hand over Discord. Join the server, and
+                  the author will generate one for you from the license
+                  dashboard.
+                </p>
+                <a
+                  href="https://discord.gg/xJ2nFUEs7u"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glow-btn mt-4 inline-flex items-center gap-2 rounded-sm bg-signal px-4 py-2.5 text-sm font-medium text-ink transition-transform hover:scale-[1.02]"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.028ZM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.333-.955 2.418-2.157 2.418Zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418Z" />
+                  </svg>
+                  Join the Discord
+                </a>
+              </div>
+
               <p className="mt-6 text-xs text-paper-dim">
-                Lost a key or need it moved to a new IP? Contact the plugin
-                author — the admin panel can reissue or revoke on request.
+                Already have a key? Use it in-game with{" "}
+                <span className="font-mono-data text-paper">/veyrix license &lt;key&gt;</span> — the
+                plugin downloads and stays licensed automatically.
               </p>
             </div>
           </div>

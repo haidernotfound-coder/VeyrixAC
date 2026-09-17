@@ -22,6 +22,18 @@ interface Stats {
   active_installs: number;
 }
 
+interface VersionRow {
+  id: string;
+  version_label: string;
+  mc_version: string;
+  filename: string;
+  file_size_bytes: number;
+  notes: string | null;
+  is_latest: boolean;
+  uploaded_at: string;
+  download_count: number;
+}
+
 function formatExpiry(epoch: number) {
   if (epoch < 0) return "Permanent";
   return new Date(epoch * 1000).toLocaleDateString(undefined, {
@@ -52,20 +64,33 @@ export default function Dashboard() {
   const [creating, setCreating] = useState(false);
   const [newKey, setNewKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [versions, setVersions] = useState<VersionRow[] | null>(null);
+  const [versionLabel, setVersionLabel] = useState("");
+  const [mcVersion, setMcVersion] = useState("1.21.11");
+  const [versionNotes, setVersionNotes] = useState("");
+  const [setLatestOnUpload, setSetLatestOnUpload] = useState(true);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [versionError, setVersionError] = useState<string | null>(null);
+
   const router = useRouter();
 
   const load = useCallback(async () => {
-    const [statsRes, keysRes] = await Promise.all([
+    const [statsRes, keysRes, versionsRes] = await Promise.all([
       fetch("/api/admin/stats"),
       fetch("/api/admin/keys"),
+      fetch("/api/admin/versions"),
     ]);
-    if (statsRes.status === 401 || keysRes.status === 401) {
+    if (statsRes.status === 401 || keysRes.status === 401 || versionsRes.status === 401) {
       router.push("/admin");
       return;
     }
     setStats(await statsRes.json());
     const keysData = await keysRes.json();
     setKeys(keysData.keys);
+    const versionsData = await versionsRes.json();
+    setVersions(versionsData.versions);
   }, [router]);
 
   useEffect(() => {
@@ -119,6 +144,77 @@ export default function Dashboard() {
     await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin");
     router.refresh();
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1] ?? "");
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleUploadVersion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!uploadFile) {
+      setVersionError("Choose a .jar file first");
+      return;
+    }
+    setUploading(true);
+    setVersionError(null);
+    try {
+      const fileBase64 = await fileToBase64(uploadFile);
+      const res = await fetch("/api/admin/versions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          versionLabel,
+          mcVersion,
+          filename: uploadFile.name,
+          fileBase64,
+          notes: versionNotes || undefined,
+          setLatest: setLatestOnUpload,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setVersionError(data.error ?? "Upload failed");
+      } else {
+        setVersionLabel("");
+        setVersionNotes("");
+        setUploadFile(null);
+        load();
+      }
+    } catch {
+      setVersionError("Network error");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleSetLatest(versionId: string) {
+    await fetch(`/api/admin/versions/${versionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ setLatest: true }),
+    });
+    load();
+  }
+
+  async function handleDeleteVersion(versionId: string) {
+    if (!confirm("Permanently delete this build? Existing keys pointed at it by ID will stop working.")) return;
+    await fetch(`/api/admin/versions/${versionId}`, { method: "DELETE" });
+    load();
+  }
+
+  function formatBytes(n: number) {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(2)} MB`;
   }
 
   return (
@@ -275,6 +371,149 @@ export default function Dashboard() {
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Plugin versions / downloads */}
+        <div className="mt-10 rounded-sm border border-panel-line bg-panel p-6">
+          <h2 className="mb-1 font-medium">Plugin builds</h2>
+          <p className="mb-4 text-xs text-paper-dim">
+            Upload a jar here and mark it latest — <span className="font-mono-data">/api/download?key=&lt;key&gt;</span>{" "}
+            always serves whichever build is marked latest below.
+          </p>
+          <form onSubmit={handleUploadVersion} className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="block text-xs text-paper-dim">Version label</label>
+              <input
+                value={versionLabel}
+                onChange={(e) => setVersionLabel(e.target.value)}
+                placeholder="e.g. 1.4.0"
+                required
+                className="font-mono-data mt-1.5 w-32 rounded-sm border border-panel-line bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-signal"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-paper-dim">MC version</label>
+              <input
+                value={mcVersion}
+                onChange={(e) => setMcVersion(e.target.value)}
+                placeholder="1.21.11"
+                className="font-mono-data mt-1.5 w-28 rounded-sm border border-panel-line bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-signal"
+              />
+            </div>
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs text-paper-dim">Notes (optional)</label>
+              <input
+                value={versionNotes}
+                onChange={(e) => setVersionNotes(e.target.value)}
+                placeholder="e.g. fixes NoSlow vehicle exemption"
+                className="font-mono-data mt-1.5 w-full rounded-sm border border-panel-line bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-signal"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-paper-dim">Jar file</label>
+              <input
+                type="file"
+                accept=".jar"
+                onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                className="font-mono-data mt-1.5 max-w-[220px] text-xs text-paper-dim"
+              />
+            </div>
+            <label className="flex items-center gap-2 pb-2 text-xs text-paper-dim">
+              <input
+                type="checkbox"
+                checked={setLatestOnUpload}
+                onChange={(e) => setSetLatestOnUpload(e.target.checked)}
+                className="accent-signal"
+              />
+              Mark as latest
+            </label>
+            <button
+              type="submit"
+              disabled={uploading}
+              className="glow-btn rounded-sm bg-signal px-5 py-2 font-medium text-ink disabled:opacity-40"
+            >
+              {uploading ? "Uploading..." : "Upload build"}
+            </button>
+          </form>
+          {versionError && <p className="mt-3 text-sm text-alert">{versionError}</p>}
+
+          <div className="mt-6 overflow-x-auto rounded-sm border border-panel-line">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-panel-line text-xs text-paper-dim">
+                  <th className="px-6 py-3 font-normal">Version</th>
+                  <th className="px-6 py-3 font-normal">MC target</th>
+                  <th className="px-6 py-3 font-normal">File</th>
+                  <th className="px-6 py-3 font-normal">Size</th>
+                  <th className="px-6 py-3 font-normal">Downloads</th>
+                  <th className="px-6 py-3 font-normal">Uploaded</th>
+                  <th className="px-6 py-3 font-normal">Status</th>
+                  <th className="px-6 py-3 font-normal"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {versions === null && (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-paper-dim">
+                      Loading...
+                    </td>
+                  </tr>
+                )}
+                {versions?.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-paper-dim">
+                      No builds uploaded yet.
+                    </td>
+                  </tr>
+                )}
+                {versions?.map((v) => (
+                  <tr key={v.id} className="border-b border-panel-line last:border-0">
+                    <td className="font-mono-data px-6 py-4 text-paper">{v.version_label}</td>
+                    <td className="px-6 py-4 text-paper-dim">{v.mc_version}</td>
+                    <td className="font-mono-data px-6 py-4 text-xs text-paper-dim">{v.filename}</td>
+                    <td className="px-6 py-4 text-paper-dim">{formatBytes(v.file_size_bytes)}</td>
+                    <td className="px-6 py-4 text-paper-dim">{v.download_count}</td>
+                    <td className="px-6 py-4 text-paper-dim">
+                      {new Date(v.uploaded_at).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+                    <td className="px-6 py-4">
+                      {v.is_latest ? (
+                        <span className="font-mono-data rounded-sm bg-signal-dim/20 px-2 py-0.5 text-xs text-signal">
+                          latest
+                        </span>
+                      ) : (
+                        <span className="font-mono-data rounded-sm bg-paper-dim/10 px-2 py-0.5 text-xs text-paper-dim">
+                          archived
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-3">
+                        {!v.is_latest && (
+                          <button
+                            onClick={() => handleSetLatest(v.id)}
+                            className="text-xs text-paper-dim hover:text-signal transition-colors"
+                          >
+                            Make latest
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteVersion(v.id)}
+                          className="text-xs text-paper-dim hover:text-alert transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #0b0d0c;
-  --panel: #12140f;
-  --panel-line: #262c22;
-  --paper: #e9ebe2;
-  --paper-dim: #9aa397;
-  --signal: #c6ff5e;
-  --signal-dim: #7c9b47;
-  --alert: #ff6b52;
+  --ink: #060a14;
+  --panel: #0b1220;
+  --panel-line: #1c2b45;
+  --paper: #e8f0ff;
+  --paper-dim: #7f92b8;
+  --signal: #3fd8ff;
+  --signal-dim: #1c7fa8;
+  --signal-glow: rgba(63, 216, 255, 0.35);
+  --alert: #ff5c7a;
 }
 
 @theme inline {
@@ -19,6 +20,7 @@
   --color-paper-dim: var(--paper-dim);
   --color-signal: var(--signal);
   --color-signal-dim: var(--signal-dim);
+  --color-signal-glow: var(--signal-glow);
   --color-alert: var(--alert);
   --font-display: var(--font-space-grotesk);
   --font-mono: var(--font-ibm-plex-mono);
@@ -43,8 +45,26 @@ body {
 }
 
 .grain {
-  background-image: radial-gradient(circle at 1px 1px, rgba(233, 235, 226, 0.06) 1px, transparent 0);
-  background-size: 22px 22px;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(232, 240, 255, 0.05) 1px, transparent 0),
+    radial-gradient(ellipse 60% 50% at 50% -10%, var(--signal-glow), transparent 70%);
+  background-size: 22px 22px, 100% 100%;
+}
+
+.glow-text {
+  text-shadow: 0 0 24px var(--signal-glow), 0 0 2px var(--signal-glow);
+}
+
+.glow-border {
+  box-shadow: 0 0 0 1px var(--signal-dim), 0 0 24px -6px var(--signal-glow);
+}
+
+.glow-btn {
+  box-shadow: 0 0 20px -2px var(--signal-glow), 0 0 0 1px rgba(63, 216, 255, 0.4) inset;
+}
+
+.glow-btn:hover {
+  box-shadow: 0 0 32px -2px var(--signal-glow), 0 0 0 1px rgba(63, 216, 255, 0.6) inset;
 }
 
 ::selection {
