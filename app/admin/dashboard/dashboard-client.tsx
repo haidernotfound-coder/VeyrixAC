@@ -34,6 +34,17 @@ interface VersionRow {
   download_count: number;
 }
 
+interface PinRow {
+  id: string;
+  pin: string;
+  label: string | null;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+  revoked: boolean;
+  used_version_label: string | null;
+}
+
 function formatExpiry(epoch: number) {
   if (epoch < 0) return "Permanent";
   return new Date(epoch * 1000).toLocaleDateString(undefined, {
@@ -74,15 +85,27 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState(false);
   const [versionError, setVersionError] = useState<string | null>(null);
 
+  const [pins, setPins] = useState<PinRow[] | null>(null);
+  const [pinLabel, setPinLabel] = useState("");
+  const [generatingPin, setGeneratingPin] = useState(false);
+  const [freshPin, setFreshPin] = useState<string | null>(null);
+  const [pinError, setPinError] = useState<string | null>(null);
+
   const router = useRouter();
 
   const load = useCallback(async () => {
-    const [statsRes, keysRes, versionsRes] = await Promise.all([
+    const [statsRes, keysRes, versionsRes, pinsRes] = await Promise.all([
       fetch("/api/admin/stats"),
       fetch("/api/admin/keys"),
       fetch("/api/admin/versions"),
+      fetch("/api/admin/pins"),
     ]);
-    if (statsRes.status === 401 || keysRes.status === 401 || versionsRes.status === 401) {
+    if (
+      statsRes.status === 401 ||
+      keysRes.status === 401 ||
+      versionsRes.status === 401 ||
+      pinsRes.status === 401
+    ) {
       router.push("/admin");
       return;
     }
@@ -91,6 +114,8 @@ export default function Dashboard() {
     setKeys(keysData.keys);
     const versionsData = await versionsRes.json();
     setVersions(versionsData.versions);
+    const pinsData = await pinsRes.json();
+    setPins(pinsData.pins);
   }, [router]);
 
   useEffect(() => {
@@ -215,6 +240,51 @@ export default function Dashboard() {
     if (n < 1024) return `${n} B`;
     if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
     return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  async function handleGeneratePin(e: React.FormEvent) {
+    e.preventDefault();
+    setGeneratingPin(true);
+    setPinError(null);
+    setFreshPin(null);
+    try {
+      const res = await fetch("/api/admin/pins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: pinLabel || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPinError(data.error ?? "Failed to generate PIN");
+      } else {
+        setFreshPin(data.pin.pin);
+        setPinLabel("");
+        load();
+      }
+    } catch {
+      setPinError("Network error");
+    } finally {
+      setGeneratingPin(false);
+    }
+  }
+
+  async function handleRevokePin(pinId: string) {
+    await fetch(`/api/admin/pins/${pinId}`, { method: "DELETE" });
+    load();
+  }
+
+  function pinStatus(p: PinRow): "used" | "revoked" | "expired" | "active" {
+    if (p.used_at) return "used";
+    if (p.revoked) return "revoked";
+    if (new Date(p.expires_at).getTime() < Date.now()) return "expired";
+    return "active";
+  }
+
+  function timeUntil(iso: string) {
+    const secs = Math.floor((new Date(iso).getTime() - Date.now()) / 1000);
+    if (secs <= 0) return "expired";
+    if (secs < 3600) return `${Math.floor(secs / 60)}m left`;
+    return `${Math.floor(secs / 3600)}h left`;
   }
 
   return (
@@ -514,6 +584,110 @@ export default function Dashboard() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Download PINs */}
+        <div className="mt-10 rounded-sm border border-panel-line bg-panel p-6">
+          <h2 className="mb-1 font-medium">Download PINs</h2>
+          <p className="mb-4 text-xs text-paper-dim">
+            Give a player a 6-digit code. They enter it at{" "}
+            <span className="font-mono-data">/redeem</span>, pick a build,
+            and it downloads once — the code is burned after use.
+          </p>
+          <form onSubmit={handleGeneratePin} className="flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs text-paper-dim">Label (optional)</label>
+              <input
+                value={pinLabel}
+                onChange={(e) => setPinLabel(e.target.value)}
+                placeholder="e.g. buyer's Discord handle"
+                className="font-mono-data mt-1.5 w-full rounded-sm border border-panel-line bg-ink px-3 py-2 text-sm text-paper outline-none focus:border-signal"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={generatingPin}
+              className="glow-btn rounded-sm bg-signal px-5 py-2 font-medium text-ink disabled:opacity-40"
+            >
+              {generatingPin ? "Generating..." : "Generate PIN"}
+            </button>
+          </form>
+          {pinError && <p className="mt-3 text-sm text-alert">{pinError}</p>}
+          {freshPin && (
+            <div className="glow-border mt-4 rounded-sm border border-signal-dim bg-ink p-4">
+              <div className="text-xs text-paper-dim">New PIN (valid 24h, give it to the player):</div>
+              <div className="font-mono-data mt-1 text-2xl tracking-[0.3em] text-signal">{freshPin}</div>
+            </div>
+          )}
+
+          <div className="mt-6 overflow-x-auto rounded-sm border border-panel-line">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-panel-line text-xs text-paper-dim">
+                  <th className="px-6 py-3 font-normal">PIN</th>
+                  <th className="px-6 py-3 font-normal">Label</th>
+                  <th className="px-6 py-3 font-normal">Used build</th>
+                  <th className="px-6 py-3 font-normal">Expires</th>
+                  <th className="px-6 py-3 font-normal">Status</th>
+                  <th className="px-6 py-3 font-normal"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pins === null && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-paper-dim">
+                      Loading...
+                    </td>
+                  </tr>
+                )}
+                {pins?.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-paper-dim">
+                      No PINs generated yet.
+                    </td>
+                  </tr>
+                )}
+                {pins?.map((p) => {
+                  const status = pinStatus(p);
+                  return (
+                    <tr key={p.id} className="border-b border-panel-line last:border-0">
+                      <td className="font-mono-data px-6 py-4 tracking-[0.2em] text-paper">{p.pin}</td>
+                      <td className="px-6 py-4 text-paper-dim">{p.label || <span>—</span>}</td>
+                      <td className="px-6 py-4 text-paper-dim">
+                        {p.used_version_label || <span>—</span>}
+                      </td>
+                      <td className="px-6 py-4 text-paper-dim">
+                        {status === "active" ? timeUntil(p.expires_at) : "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`font-mono-data rounded-sm px-2 py-0.5 text-xs ${
+                            status === "active"
+                              ? "bg-signal-dim/20 text-signal"
+                              : status === "used"
+                              ? "bg-paper-dim/10 text-paper-dim"
+                              : "bg-alert/10 text-alert"
+                          }`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {status === "active" && (
+                          <button
+                            onClick={() => handleRevokePin(p.id)}
+                            className="text-xs text-paper-dim hover:text-alert transition-colors"
+                          >
+                            Revoke
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

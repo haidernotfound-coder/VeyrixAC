@@ -125,3 +125,9 @@ export function durationToExpiry(duration: string): number {
   const days = unit === "d" ? amount : unit === "mo" ? amount * 30 : amount * 365;
   return now + days * daySeconds;
 }
+
+/** Generates a cryptographically random 6-digit numeric string, zero-padded (e.g. "004821"). */
+export function generatePin(): string {
+  const n = crypto.randomInt(0, 1_000_000);
+  return n.toString().padStart(6, "0");
+}

@@ -53,4 +53,21 @@ export async function ensureSchema() {
       download_count INT NOT NULL DEFAULT 0
     )
   `;
+  await db`
+    CREATE TABLE IF NOT EXISTS download_pins (
+      id BIGSERIAL PRIMARY KEY,
+      pin TEXT NOT NULL, -- 6-digit numeric string, zero-padded
+      label TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      used_version_id BIGINT REFERENCES plugin_versions(id),
+      revoked BOOLEAN NOT NULL DEFAULT false
+    )
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_download_pins_pin_active
+    ON download_pins (pin)
+    WHERE used_at IS NULL AND revoked = false
+  `;
 }
