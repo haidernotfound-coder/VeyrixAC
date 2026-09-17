@@ -28,6 +28,7 @@ export default function Home() {
           <nav className="flex items-center gap-6 text-sm text-paper-dim">
             <Link href="#checks" className="hover:text-paper transition-colors">Checks</Link>
             <Link href="#licensing" className="hover:text-paper transition-colors">Licensing</Link>
+            <Link href="/pricing" className="hover:text-paper transition-colors">Pricing</Link>
             <Link href="#roadmap" className="hover:text-paper transition-colors">Roadmap</Link>
             <a
               href="https://discord.gg/xJ2nFUEs7u"
