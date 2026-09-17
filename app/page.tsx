@@ -37,6 +37,9 @@ export default function Home() {
             >
               Discord
             </a>
+            <Link href="/redeem" className="hover:text-signal transition-colors">
+              Download
+            </Link>
             <Link
               href="/admin"
               className="rounded-sm border border-panel-line px-3 py-1.5 text-paper hover:border-signal hover:text-signal transition-colors"
@@ -69,6 +72,12 @@ export default function Home() {
             >
               Get a license
             </a>
+            <Link
+              href="/redeem"
+              className="glow-border rounded-sm border border-signal-dim px-5 py-3 font-medium text-signal transition-colors hover:bg-signal/10"
+            >
+              Download the jar
+            </Link>
             <a
               href="#checks"
               className="font-mono-data text-sm text-paper-dim hover:text-paper transition-colors"
