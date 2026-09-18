@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #060a14;
+  --panel: #0b1220;
+  --panel-line: #1c2b45;
+  --paper: #e8f0ff;
+  --paper-dim: #7f92b8;
+  --signal: #3fd8ff;
+  --signal-dim: #1c7fa8;
+  --signal-glow: rgba(63, 216, 255, 0.35);
+  --alert: #ff5c7a;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-panel: var(--panel);
+  --color-panel-line: var(--panel-line);
+  --color-paper: var(--paper);
+  --color-paper-dim: var(--paper-dim);
+  --color-signal: var(--signal);
+  --color-signal-dim: var(--signal-dim);
+  --color-signal-glow: var(--signal-glow);
+  --color-alert: var(--alert);
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-mono-data {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+.grain {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(232, 240, 255, 0.05) 1px, transparent 0),
+    radial-gradient(ellipse 60% 50% at 50% -10%, var(--signal-glow), transparent 70%);
+  background-size: 22px 22px, 100% 100%;
+}
+
+.glow-text {
+  text-shadow: 0 0 24px var(--signal-glow), 0 0 2px var(--signal-glow);
+}
+
+.glow-border {
+  box-shadow: 0 0 0 1px var(--signal-dim), 0 0 24px -6px var(--signal-glow);
+}
+
+.glow-btn {
+  box-shadow: 0 0 20px -2px var(--signal-glow), 0 0 0 1px rgba(63, 216, 255, 0.4) inset;
+}
+
+.glow-btn:hover {
+  box-shadow: 0 0 32px -2px var(--signal-glow), 0 0 0 1px rgba(63, 216, 255, 0.6) inset;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--ink);
+}

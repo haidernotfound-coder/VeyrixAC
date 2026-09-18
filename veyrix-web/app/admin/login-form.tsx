@@ -36,7 +36,7 @@ export default function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="tick-frame rounded-sm border border-panel-line bg-panel p-6"
+      className="rounded-sm border border-panel-line bg-panel p-6"
     >
       <label className="block text-sm text-paper-dim">Password</label>
       <input
@@ -51,7 +51,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading || !password}
-        className="glow-btn mt-5 w-full rounded-sm bg-signal py-2.5 font-medium text-ink transition-opacity disabled:opacity-40"
+        className="mt-5 w-full rounded-sm bg-signal py-2.5 font-medium text-ink transition-opacity disabled:opacity-40"
       >
         {loading ? "Checking..." : "Sign in"}
       </button>

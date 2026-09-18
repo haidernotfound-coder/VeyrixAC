@@ -90,7 +90,7 @@ export default function RedeemClient() {
 
   if (done) {
     return (
-      <div className="glow-border rounded-sm border border-panel-line bg-panel p-6 text-center">
+      <div className="tick-frame glow-border rounded-sm border border-panel-line bg-panel p-6 text-center">
         <div className="text-signal">Download started.</div>
         <p className="mt-2 text-sm text-paper-dim">
           That PIN has now been used and won&apos;t work again. Drop the jar
@@ -111,7 +111,7 @@ export default function RedeemClient() {
           inputMode="numeric"
           placeholder="000000"
           autoFocus
-          className="font-mono-data w-full rounded-sm border border-panel-line bg-panel px-4 py-3 text-center text-2xl tracking-[0.3em] text-paper outline-none focus:border-signal"
+          className="font-mono-data w-full rounded-sm border border-panel-line bg-panel px-4 py-3.5 text-center text-2xl tracking-[0.3em] text-paper outline-none transition-colors focus:border-signal"
         />
         <button
           type="submit"
@@ -136,7 +136,7 @@ export default function RedeemClient() {
             {versions.map((v) => (
               <div
                 key={v.id}
-                className="flex items-center justify-between gap-4 rounded-sm border border-panel-line bg-panel p-4"
+                className="flex items-center justify-between gap-4 rounded-sm border border-panel-line bg-panel p-4 transition-colors hover:border-signal-dim"
               >
                 <div>
                   <div className="flex items-center gap-2">

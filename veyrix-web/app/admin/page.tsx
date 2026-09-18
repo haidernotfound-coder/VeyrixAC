@@ -7,11 +7,13 @@ export default async function AdminEntry() {
     redirect("/admin/dashboard");
   }
   return (
-    <main className="instrument-field flex min-h-screen items-center justify-center bg-ink px-6">
+    <main className="flex min-h-screen items-center justify-center bg-ink px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="font-display text-2xl italic text-signal">Veyrix</div>
-          <h1 className="mt-2 text-lg text-paper-dim">Sign in to the license desk</h1>
+          <div className="font-mono-data text-xs uppercase tracking-wide text-signal-dim">
+            Veyrix
+          </div>
+          <h1 className="mt-2 text-2xl font-medium text-paper">Admin access</h1>
         </div>
         <LoginForm />
       </div>
