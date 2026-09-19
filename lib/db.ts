@@ -47,12 +47,20 @@ export async function ensureSchema() {
       filename TEXT NOT NULL,
       file_bytes TEXT NOT NULL, -- base64-encoded jar contents
       file_size_bytes BIGINT NOT NULL,
+      sha256 TEXT, -- hex digest of the raw jar bytes, computed server-side on upload
       notes TEXT,
       is_latest BOOLEAN NOT NULL DEFAULT false,
       uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       download_count INT NOT NULL DEFAULT 0
     )
   `;
+  // Migration: sha256 was added after plugin_versions already existed on
+  // some deployments - CREATE TABLE IF NOT EXISTS above won't add it to a
+  // table that's already there, so patch it in explicitly. The auto-update
+  // feature (see /api/heartbeat) refuses to hand out a version with no
+  // checksum, so this must succeed before that feature works on an
+  // existing database.
+  await db`ALTER TABLE plugin_versions ADD COLUMN IF NOT EXISTS sha256 TEXT`;
   await db`
     CREATE TABLE IF NOT EXISTS download_pins (
       id BIGSERIAL PRIMARY KEY,

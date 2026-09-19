@@ -20,9 +20,26 @@ export const dynamic = "force-dynamic";
  *   activation time (LicenseManager binds it to license.dat's HMAC), and
  *   this endpoint only ever narrows validity (checks revoked/expired) -
  *   it can't be used to forge a license that wasn't already active.
- * Response: { valid: boolean, reason?: string }
+ * Response: { valid: boolean, reason?: string, latestVersion?: string,
+ *             downloadUrl?: string, sha256?: string }
  *   If valid is false, the plugin should disable itself (mirrors the
  *   original "fail closed" philosophy in LicenseManager).
+ *
+ *   The latestVersion/downloadUrl/sha256 trio is how auto-update piggybacks
+ *   on this existing once-a-minute channel instead of adding a second one
+ *   (see UpdateManager.java). It is only ever included when a key is valid
+ *   AND a published version's checksum is available - a plugin with no
+ *   sha256 on file is never advertised as an update target, since that
+ *   checksum is the only thing UpdateManager verifies a downloaded jar
+ *   against before it's allowed to replace anything running on someone
+ *   else's server. This endpoint being reachable/malicious is the actual
+ *   threat model for a remote-code-push feature, so it deliberately does
+ *   NOT vary this response based on the caller's reported pluginVersion -
+ *   the plugin decides for itself, client-side, whether an update is
+ *   needed by comparing latestVersion to its own getPluginMeta().getVersion(),
+ *   so a compromised or malicious response here can at most ever point at
+ *   whatever is actually stored as is_latest in plugin_versions, never at
+ *   an arbitrary attacker-hosted URL.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -72,6 +89,27 @@ export async function POST(req: NextRequest) {
       DO UPDATE SET last_seen = now(), server_name = EXCLUDED.server_name,
                     plugin_version = EXCLUDED.plugin_version, player_count = EXCLUDED.player_count
     `;
+
+    // Auto-update advertisement (see doc comment above). Only the current
+    // is_latest row is ever considered, and only when it has a checksum -
+    // an upload made before the sha256 column existed, or one that somehow
+    // ended up null, is never served as an update target.
+    const [latest] = await db`
+      SELECT version_label, sha256 FROM plugin_versions
+      WHERE is_latest = true AND sha256 IS NOT NULL
+      LIMIT 1
+    `;
+    if (latest) {
+      const origin = req.nextUrl.origin;
+      return NextResponse.json({
+        valid: true,
+        latestVersion: latest.version_label,
+        downloadUrl: `${origin}/api/download?key=${encodeURIComponent(
+          typeof key === "string" ? key : ""
+        )}&keyId=${encodeURIComponent(keyId)}`,
+        sha256: latest.sha256,
+      });
+    }
 
     return NextResponse.json({ valid: true });
   } catch (err) {

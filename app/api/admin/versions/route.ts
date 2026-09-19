@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { isAdminAuthed } from "@/lib/auth";
 import { sql, ensureSchema } from "@/lib/db";
 
@@ -13,7 +14,7 @@ export async function GET() {
   await ensureSchema();
   const db = sql();
   const versions = await db`
-    SELECT id, version_label, mc_version, filename, file_size_bytes, notes,
+    SELECT id, version_label, mc_version, filename, file_size_bytes, sha256, notes,
            is_latest, uploaded_at, download_count
     FROM plugin_versions
     ORDER BY uploaded_at DESC
@@ -43,6 +44,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File too large (15 MB max)" }, { status: 400 });
     }
 
+    // Computed here, server-side, from the actual decoded bytes - never
+    // accepted from the client. This is what every running plugin verifies
+    // a downloaded jar against before it lets an auto-update replace itself
+    // (see UpdateManager.java), so it has to be trustworthy: an admin-panel
+    // request body isn't a strong enough source for a value that gates
+    // "run this code on someone else's server."
+    let jarBytes: Buffer;
+    try {
+      jarBytes = Buffer.from(fileBase64, "base64");
+    } catch {
+      return NextResponse.json({ error: "fileBase64 is not valid base64" }, { status: 400 });
+    }
+    const sha256 = createHash("sha256").update(jarBytes).digest("hex");
+
     await ensureSchema();
     const db = sql();
 
@@ -51,17 +66,18 @@ export async function POST(req: NextRequest) {
     }
 
     const [row] = await db`
-      INSERT INTO plugin_versions (version_label, mc_version, filename, file_bytes, file_size_bytes, notes, is_latest)
+      INSERT INTO plugin_versions (version_label, mc_version, filename, file_bytes, file_size_bytes, sha256, notes, is_latest)
       VALUES (
         ${versionLabel.trim()},
         ${mcVersion?.trim() || "1.21.11"},
         ${filename.trim()},
         ${fileBase64},
         ${sizeBytes},
+        ${sha256},
         ${notes ?? null},
         ${!!setLatest}
       )
-      RETURNING id, version_label, mc_version, filename, file_size_bytes, notes, is_latest, uploaded_at
+      RETURNING id, version_label, mc_version, filename, file_size_bytes, sha256, notes, is_latest, uploaded_at
     `;
 
     return NextResponse.json({ version: row });
