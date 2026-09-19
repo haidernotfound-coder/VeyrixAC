@@ -23,9 +23,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Veyrix — Anticheat for Paper 1.21.11",
+  title: "Veyrix — Anticheat for Paper 1.21.1–1.21.11",
   description:
-    "Veyrix is a from-scratch Paper anticheat for Minecraft 1.21.11 (Mounts of Mayhem): movement, combat, and world checks with licensed, obfuscated builds.",
+    "Veyrix is a from-scratch Paper anticheat for Minecraft 1.21.1 through 1.21.11 (Mounts of Mayhem is the newest): movement, combat, and world checks with licensed, obfuscated builds.",
 };
 
 export default function RootLayout({

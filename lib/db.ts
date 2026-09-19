@@ -43,7 +43,7 @@ export async function ensureSchema() {
     CREATE TABLE IF NOT EXISTS plugin_versions (
       id BIGSERIAL PRIMARY KEY,
       version_label TEXT NOT NULL,
-      mc_version TEXT NOT NULL DEFAULT '1.21.11',
+      mc_version TEXT NOT NULL DEFAULT '1.21.1-1.21.11',
       filename TEXT NOT NULL,
       file_bytes TEXT NOT NULL, -- base64-encoded jar contents
       file_size_bytes BIGINT NOT NULL,

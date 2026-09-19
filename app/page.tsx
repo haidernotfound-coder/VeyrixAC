@@ -23,7 +23,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div className="flex items-baseline gap-2.5">
             <span className="font-display text-xl italic tracking-tight">Veyrix</span>
-            <span className="font-mono-data text-[11px] text-paper-dim">1.21.11</span>
+            <span className="font-mono-data text-[11px] text-paper-dim">1.21.1–1.21.11</span>
           </div>
           <nav className="flex items-center gap-7 text-[15px] text-paper-dim">
             <Link href="#checks" className="hover:text-paper transition-colors">Checks</Link>
@@ -270,7 +270,7 @@ export default function Home() {
       </section>
 
       <footer className="mx-auto max-w-6xl px-6 py-10 text-xs text-paper-dim">
-        Veyrix — built for Mounts of Mayhem (1.21.11). Not affiliated with Mojang or Microsoft.
+        Veyrix — built for Paper 1.21.1–1.21.11 (Mounts of Mayhem is the newest). Not affiliated with Mojang or Microsoft.
       </footer>
     </main>
   );

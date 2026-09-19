@@ -78,7 +78,7 @@ export default function Dashboard() {
 
   const [versions, setVersions] = useState<VersionRow[] | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
-  const [mcVersion, setMcVersion] = useState("1.21.11");
+  const [mcVersion, setMcVersion] = useState("1.21.1-1.21.11");
   const [versionNotes, setVersionNotes] = useState("");
   const [setLatestOnUpload, setSetLatestOnUpload] = useState(true);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -487,8 +487,8 @@ export default function Dashboard() {
               <input
                 value={mcVersion}
                 onChange={(e) => setMcVersion(e.target.value)}
-                placeholder="1.21.11"
-                className="font-mono-data mt-1.5 w-28 rounded-sm border border-panel-line bg-ink px-3 py-2 text-sm text-paper outline-none transition-colors focus:border-signal"
+                placeholder="1.21.1-1.21.11"
+                className="font-mono-data mt-1.5 w-40 rounded-sm border border-panel-line bg-ink px-3 py-2 text-sm text-paper outline-none transition-colors focus:border-signal"
               />
             </div>
             <div className="flex-1 min-w-[180px]">
