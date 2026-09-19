@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       INSERT INTO plugin_versions (version_label, mc_version, filename, file_bytes, file_size_bytes, sha256, notes, is_latest)
       VALUES (
         ${versionLabel.trim()},
-        ${mcVersion?.trim() || "1.21.11"},
+        ${mcVersion?.trim() || "1.21.1-1.21.11"},
         ${filename.trim()},
         ${fileBase64},
         ${sizeBytes},
