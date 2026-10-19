@@ -77,14 +77,16 @@ export interface ParsedKey {
 export function parseAndVerifyKey(keyString: string): ParsedKey | null {
   if (!keyString) return null;
   const trimmed = keyString.trim();
-  const parts = trimmed.split("-");
-  if (parts.length !== 3 || parts[0] !== PREFIX) return null;
+  // Base64URL itself contains '-', so only the fixed-width boundary is a separator.
+  const prefix = `${PREFIX}-`;
+  const separator = prefix.length + 22;
+  if (!trimmed.startsWith(prefix) || trimmed.length !== separator + 1 + 43 || trimmed[separator] !== "-") return null;
 
   let payload: Buffer;
   let sig: Buffer;
   try {
-    payload = Buffer.from(parts[1], "base64url");
-    sig = Buffer.from(parts[2], "base64url");
+    payload = Buffer.from(trimmed.slice(prefix.length, separator), "base64url");
+    sig = Buffer.from(trimmed.slice(separator + 1), "base64url");
   } catch {
     return null;
   }
